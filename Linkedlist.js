@@ -1,36 +1,4 @@
 'use strict'
-function objToString(obj) {
-    var str = '';
-    for (var p in obj) {
-        if (obj.hasOwnProperty(p)) {
-            str += p + '::' + obj[p] + '\n';
-        }
-    }
-    return str;
-}
-function partition(list, lowIndex, highIndex){
-  var piv=list.get( (list.length-1)/2 );//берем посдений элемент как опорный, потому что в метод get надо передавать только целые числа
-  var i=lowIndex, j=highIndex;
-  while (i<=j) {
-    while(list.get(i)<piv)  i++;
-    while (list.get(j)>piv) j--;
-    if(i<=j){
-      list.swap(i, j);
-      i++;
-      j--;
-    }
-  }
-
-return i;
-}
-function quicksort(list, lowIndex, highIndex){
-  var p=partition(list, lowIndex, highIndex);
-  if (lowIndex<highIndex){
-    if (lowIndex<p) quicksort(list, lowIndex, p-1);
-    if (p<highIndex)  quicksort(list, p, highIndex);
-  }
-}
-
 class Node{
 	constructor(value){
 		this.value=value;
@@ -83,12 +51,12 @@ class LinkedList{
 	// return boolean
 	contains(value){
 		var result=false;
-	this.forEach((currentNode, index)=>{
-		if (currentNode.value===value) {
-			result=true;
-		}
-	});
-	return result;
+		this.forEach((currentNode, index)=>{
+			if (currentNode.value===value) {
+				result=true;
+			}
+		});
+		return result;
 	}
 	// removes last element from the list
 	pop(){
@@ -98,6 +66,19 @@ class LinkedList{
 		this.length--;
 		return currentNode;
 	}
+	//removes object any position from list
+  removes(index){
+    var currentNode = this.head;
+    var currentIndex=0;
+    while (currentIndex<index) {
+      currentNode=currentNode.next;
+      currentIndex++;
+    }
+    currentNode.prev.next=currentNode.next;
+    currentNode.next.prev=currentNode.prev;
+    this.length--;
+    return currentNode;
+  }
 	// removes first element from the list
 	shift(){
 		var currentNode=this.head.value;
@@ -117,23 +98,23 @@ class LinkedList{
 		}
 	}
 	// set an element to specific position
-	set(position, element){
+	set(index, element){
 		var currentNode = this.head;
 		var node = new Node(element);
-  		var currentIndex=0;
-  		while (currentIndex<position) {
-  			currentNode=currentNode.next;
-  			currentIndex++;
-  		}
+  	var currentIndex=0;
+  	while (currentIndex<index) {
+  		currentNode=currentNode.next;
+  		currentIndex++;
+  	}
 		node.next = currentNode;//set the new object reference to the next
 		node.prev = currentNode.prev;//set the new object reference to the previous
 		currentNode.prev.next=node;//set the next object reference to the previous
 		currentNode.prev=node;//set the previous object reference to the next
-		if (position!==0 | position<this.length) {
+		if (index!==0 | index<this.length) {
 			this.length++;
 		}
 	}
-// reverse list and returns
+	// reverse list and returns
 	reverse(){
 		var currentNode=this.tail;
 		var previousNode=null;
@@ -155,45 +136,111 @@ class LinkedList{
 		var string = "[";
 		this.forEach( (element, index) => {
 			if (typeof(element.value)=='string') {
-				 string+="\""+element.value+"\"";
+				string+="\""+element.value+"\"";
 			}
 			else if (typeof(element.value)==='object') {
 				(Object.keys(element.value).length === 0)?string+="{}":string+=objToString(element.value);
 			}	else {
 					string+=element.value;
-				}
+			}
 			(element.next!==null)?string+=",":string+="]";
 		});
 		return string;
 	}
-  specialSet(position, element){
+	//change value only in list object
+  changeValue(index, element){
     var currentNode = this.head;
 		var currentIndex=0;
-		while (currentIndex<position && position<this.length) {
+		while (currentIndex<index && index<this.length) {
 			currentNode=currentNode.next;
 			currentIndex++;
 		}
     currentNode.value=element;
     return currentNode.value;
   }
+	//mutually change values
   swap(lowIndex, highIndex){
-      var temp=this.get(highIndex);//вернется только value обьекта
-      this.specialSet(highIndex, this.get(lowIndex));//сетим в правый элемент значение левого
-      this.specialSet(lowIndex, temp);//наоборот
-    }
-
-  sort(){
-    quicksort(this, 0, this.length-1);//сортировка действительна только для чисел
-      //this.forEach( (element, index) => {
-        //if (typeof(element.value)=='number') {
-          //firstnumber
-        //}else if (typeof(element.value)=='string') {
-          //
-        //}else if (typeof(element.value)=='object') {
-          //
-        //}
-      //});
+    var temp=this.get(highIndex);
+    this.changeValue(highIndex, this.get(lowIndex));
+    this.changeValue(lowIndex, temp);
   }
-
+	//sort list
+  sort(){
+    var x=partitionList(this, 0, this.length-1);
+    quicksort(this, 0, x-1, 'number');//sorting is only valid for numbers
+    //quicksort(this, 5, this.length-1, 'string');
+    }
 }
+
+function quicksort(list, lowIndex, highIndex, type){
+	var p=0;
+  if (type=='string') {
+    p=partitionString(list, lowIndex, highIndex);
+  }
+  if (type=='number') {
+  	p=partitionNumber(list, lowIndex, highIndex);
+  }
+  if (lowIndex<highIndex){
+    if (lowIndex<p) quicksort(list, lowIndex, p-1, type);
+    if (p<highIndex)  quicksort(list, p, highIndex, type);
+  }
+	return list;
+}
+//divides the list into parts with numbers and part with string
+function partitionList(list, lowIndex, highIndex){
+	var averageIndex=Math.floor( (lowIndex+highIndex)/2);
+	var piv=list.get( averageIndex );//обязательно берем целое число, потому что метод get не умеет искать по дробным индексам!!! из-за этого перегружается стэк!
+  var i=lowIndex, j=highIndex, a=averageIndex;
+  while (i<j) {
+  	while( typeof( list.get(i) )==='number')  i++;
+    while ( typeof( list.get(j) )==='string') j--;
+    if(i<=j){
+    	list.swap(i, j);
+      i++;
+      j--;
+    }
+	}
+  return i;
+}
+//sorts part of the list with numbers
+function partitionNumber(list, lowIndex, highIndex){
+  var piv=list.get( Math.floor( (lowIndex+highIndex)/2) );//обязательно берем целое число, потому что метод get не умеет искать по дробным индексам!!! из-за этого перегружается стэк!
+  var i=lowIndex, j=highIndex;
+  while (i<=j) {
+    while(list.get(i)<piv)  i++;
+    while (list.get(j)>piv) j--;
+    if(i<=j){
+      list.swap(i, j);
+      i++;
+      j--;
+    }
+  }
+	return i;
+}
+//sorts part of the list with strings
+function partitionString(list, lowIndex, highIndex){
+  var piv=list.get( Math.floor( (lowIndex+highIndex)/2) );
+  var i=lowIndex, j=highIndex;
+  while (i<=j) {
+    while((list.get(i)).length<piv.length)  i++;
+    while ((list.get(i)).length>piv.length) j--;
+    if(i<=j){
+      list.swap(i, j);
+      i++;
+      j--;
+    }
+  }
+	return i;
+}
+//returns object value in string
+function objToString(obj) {
+	var str = '';
+  for (var p in obj) {
+  	if (obj.hasOwnProperty(p)) {
+    	str += p + '::' + obj[p] + '\n';
+    }
+  }
+  return str;
+}
+
 module.exports = LinkedList;

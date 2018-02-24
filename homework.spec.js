@@ -8,6 +8,7 @@ beforeEach(() => {
 
 function setUpList() {
     list = new LinkedList(1, 23, 44, 'dsfs', {});
+    list1 = new LinkedList("s",5,77,"kuku", "kek", 1024, "pikachu", 5, 0, 1);
 }
 
 /* --- actual tests --- */
@@ -66,7 +67,7 @@ test('List reverse() returns correct string representation of the list', () => {
     expect(reversed.tail.value).toBe(1);
 });
 
-//test('List sort() returns sort list', () => {
-//    expect(list.sort()).toBe();
-//      expect(list.toString()).toBe();
-//});
+test('List sort() returns sort list', () => {
+    expect(list1.sort()).toBe();
+      expect(list1.toString()).toBe('[0,1,5,5,77,1024,"pikachu","kek","kuku","s"]');
+});
